@@ -2,7 +2,7 @@
 # edits made
 ### - Blog posts component edits
 i just added three main states:
----------------------------------------------------
+
 |State | what it does|
 |---------------| ---------------------|
 |*currentPage* | monitors page changes and saves the current active page to be later passed down to the children|
