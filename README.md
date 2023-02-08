@@ -1,49 +1,92 @@
-# Hatchways Times
 
-Hatchways Times is a website that lists blog posts. All data is located in `src/data/blogs.json` file and loaded directly into client without a server.
+# edits made
+### - Blog posts component edits
+i just added three main states:
+---------------------------------------------------
+|State | what it does|
+|---------------| ---------------------|
+|*currentPage* | monitors page changes and saves the current active page to be later passed down to the children|
+|*pageSize* | encounters how many rows per page take it's value when the user chooses an option from the selector|
+|*currentPaginationData* | it deals with the content that would be displayed in the current active page by slicing the whole posts into chunks|
 
-Example blog post data:
+Here is the code: 
+```jsx
+  const posts = blogs.posts;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [currentPaginationData, setCurrentPaginationData] = useState(posts.slice(0, pageSize));
 
-```json
-{
-  "id": 1,
-  "author": "Esmeralda Vanne",
-  "title": "Duis bibendum. Morbi non quam nec dui luctus rutrum. Nulla tellus.",
-  "excerpt": "Cras in purus eu magna vulputate luctus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.",
-  "date": "1634439025000",
-  "image": "http://dummyimage.com/200x134.png/cc0000/ffffff",
-  "readingTimeMinutes": 9,
-  "tags": ["crypto", "health"]
+```
+
+then used *useEffect* to handle changes in the content when the page changes 
+
+```jsx
+  useEffect(()=>{
+    
+    // sync content with page changes and page size
+
+    let startSlice = (currentPage - 1) * pageSize;
+    let endSlice = currentPage  * pageSize;
+    setCurrentPaginationData(posts.slice(startSlice, endSlice));
+
+  }, [currentPage, pageSize])
+  
+```
+
+lastly i added the *handlePageChange()* functions for the buttons to keep page number in the limit specified (it disables the button when reaches 1 or max page but just in case :)
+
+```jsx
+  const handlePageChange = (step) => {
+    // buttons' click functions
+    setCurrentPage(prev => {
+      let res = prev + step;
+      if( res < 1) return 1
+      else if( res > maxPage) return maxPage
+      else return res
+    });
+  }
+```
+
+
+### - Custom hook logic (usePagination)
+
+it takes the current page and subtracts 1 then compare it with 1 to detect if it has a left sibling that is not 1 to decide whether to add the 3 dots at the beginning or not
+
+reverse this approach and you will get the logic for the last 3 dots
+
+```jsx
+
+function  usePagination({currentPage, maxPage }) {
+
+	let  temp = [];
+
+	let  min = (currentPage == maxPage && maxPage != 1) ? maxPage -2 : Math.max(1, currentPage-1);
+	let  max = Math.min(min+2, maxPage);
+
+	for(var  i = min; i <= max; i++) temp.push(i)
+
+	if(temp[0] > 1){ temp.unshift(1, DOTS); }
+	
+	if(temp.at(-1) < maxPage){ temp.push(DOTS, maxPage); }
+
+	return  temp;
 }
 ```
 
-# Getting Started
+### - Pagination component
+i just pass down the function **handlePageChange()** to the buttons on click functions and call the hook **usePagination()** nothing much
 
-- System requirements
-  - Node.JS v14
-- Install dependencies
-  ```
-  yarn
-  ```
-- Start client
-  ```
-  yarn start
-  ```
+```jsx
+const  paginationRange = usePagination({
+	currentPage,
+	maxPage,
+});
 
-# Getting Started (Docker)
+const  onNext = () => {
+	handlePageChange(1);
+};
 
-Instead of following the steps above, you can also use Docker to set up your environment.
-
-- System requirements
-  - [Docker Compose](https://docs.docker.com/compose/install/)
-- Run `docker-compose up` to run the client. 
-- Enter `Ctrl-C` in the same same terminal or `docker-compose down` in a separate terminal to shut down the server.
-
-# Verify That Everything Is Set Up Correctly
-
-If your application is running correctly, you should be able to access it from your browser by going to [http://localhost:3000/](http://localhost:3000/).
-
-# Helpful Commands
-
-- `yarn test` : This repository contains a non-comprehensive set of unit tests used to determine if your code meets the basic requirements of the assignment. **Please do not modify these tests.**
-- `yarn prettier --write .` : Runs auto-formatter
+const  onPrevious = () => {
+	handlePageChange(-1);
+};
+```
